@@ -41,9 +41,10 @@ class AppTheme {
     color: const Color(0xFFE5E5E5), // Higher contrast than white70
   );
 
-  static TextStyle get labelButton => GoogleFonts.roboto(
-    fontSize: 18,
-    fontWeight: FontWeight.w700,
+  static TextStyle get labelButton => GoogleFonts.archivoBlack(
+    // Updated to Archivo Black for "cool athletic" look
+    fontSize: 20, // Slightly larger base for this font
+    fontWeight: FontWeight.normal, // Archivo Black is already bold/black
     color: primaryWhite,
     letterSpacing: 1.0,
   );
