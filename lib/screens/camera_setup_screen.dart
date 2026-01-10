@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:ai_virtual_coach/main.dart';
 import 'package:ai_virtual_coach/theme/app_theme.dart';
 
 class CameraSetupScreen extends StatefulWidget {
@@ -27,6 +26,15 @@ class _CameraSetupScreenState extends State<CameraSetupScreen> {
   }
 
   Future<void> _initializeCamera() async {
+    // Lazy-load available cameras
+    List<CameraDescription> cameras = [];
+    try {
+      cameras = await availableCameras();
+    } on CameraException catch (e) {
+      debugPrint('Camera error: $e');
+      return;
+    }
+
     if (cameras.isEmpty) return;
 
     // Use the first available back camera

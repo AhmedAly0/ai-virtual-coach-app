@@ -65,7 +65,7 @@ class ResultsScreen extends StatelessWidget {
 
               // Overall Score Card (Dynamic Color)
               _buildHardShadowCard(
-                backgroundColor: _getOverallScoreColor(displayScore),
+                backgroundColor: _getScoreColor(displayScore),
                 padding: const EdgeInsets.all(12),
                 child: Column(
                   children: [
@@ -352,12 +352,6 @@ class ResultsScreen extends StatelessWidget {
     );
   }
 
-  Color _getScoreColor(double score) {
-    if (score >= 8.0) return AppTheme.accentGreen;
-    if (score >= 5.0) return AppTheme.accentBlue;
-    return AppTheme.accentRed;
-  }
-
   String _getMotivationalText(double score) {
     if (score >= 85) return 'EXCELLENT FORM!';
     if (score >= 70) return 'GOOD JOB!';
@@ -365,8 +359,8 @@ class ResultsScreen extends StatelessWidget {
     return 'FOCUS ON TECHNIQUE';
   }
 
-  // Dynamic color for overall score card background
-  Color _getOverallScoreColor(double score) {
+  // Unified color mapping for scores
+  Color _getScoreColor(double score) {
     if (score >= 85) return AppTheme.accentGreen; // Excellent: Green
     if (score >= 70) return _tealGood; // Good: Teal
     if (score >= 50) return AppTheme.warningOrange; // Needs Improvement: Orange

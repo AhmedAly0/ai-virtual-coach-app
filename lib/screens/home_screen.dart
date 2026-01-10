@@ -69,43 +69,27 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
 
-                      // Spacer for the "Motivational Text" design
+                      // Replace motivational text with Red Dumbbell Logo
                       Expanded(
                         child: Center(
-                          // Placeholder dotted box as per screenshot annotation
                           child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 24),
-                            padding: const EdgeInsets.all(24),
+                            width: 160,
+                            height: 160,
                             decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Colors.grey.withOpacity(0.5),
-                                width: 2,
-                                style: BorderStyle
-                                    .solid, // Dotted not easily available without custom painter, using grey solid for now or Dashed if I added a package. Keeping simple.
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  '"Train smarter, not harder."',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineSmall
-                                      ?.copyWith(
-                                        color: Colors.grey[800],
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'Get real-time form analysis and personalized coaching feedback.',
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: Colors.grey[600]),
+                              color: AppTheme.accentRed,
+                              border: Border.all(color: Colors.black, width: 6),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black,
+                                  offset: Offset(8, 8),
+                                  blurRadius: 0,
                                 ),
                               ],
+                            ),
+                            child: const Icon(
+                              Icons.fitness_center,
+                              size: 80,
+                              color: Colors.white,
                             ),
                           ),
                         ),
