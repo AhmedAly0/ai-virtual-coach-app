@@ -5,8 +5,6 @@ import 'dart:math';
 import 'package:ai_virtual_coach/theme/app_theme.dart';
 import 'package:ai_virtual_coach/models/session_models.dart';
 
-import 'dart:ui';
-
 class RecordingScreen extends StatefulWidget {
   const RecordingScreen({super.key});
 
@@ -69,9 +67,13 @@ class _RecordingScreenState extends State<RecordingScreen> {
     });
   }
 
-  void _finishExercise() {
+  Future<void> _finishExercise() async {
     _timer?.cancel();
     _mockDataTimer?.cancel();
+
+    // CRITICAL: Dispose camera before navigation to release resources
+    await _controller?.dispose();
+    _controller = null;
 
     final args =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
@@ -84,6 +86,7 @@ class _RecordingScreenState extends State<RecordingScreen> {
       metadata: {'fps': 30, 'device': 'mobile'},
     );
 
+    if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/processing', arguments: request);
   }
 
@@ -136,49 +139,6 @@ class _RecordingScreenState extends State<RecordingScreen> {
                   const Center(
                     child: CircularProgressIndicator(color: AppTheme.accentRed),
                   ),
-
-                // Center Status Text (Overlay)
-                Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.videocam_outlined,
-                        size: 64,
-                        color: Colors.white.withOpacity(0.8),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Recording in Progress',
-                        style: AppTheme.bodyLarge.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          shadows: [
-                            const Shadow(
-                              offset: Offset(1, 1),
-                              blurRadius: 2,
-                              color: Colors.black,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '(Full screen camera view)',
-                        style: AppTheme.bodyMedium.copyWith(
-                          color: Colors.white.withOpacity(0.8),
-                          shadows: [
-                            const Shadow(
-                              offset: Offset(1, 1),
-                              blurRadius: 2,
-                              color: Colors.black,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
 
                 // Timer (Top Right)
                 Positioned(

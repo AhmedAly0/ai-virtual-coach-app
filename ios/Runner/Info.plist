@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>AI Virtual Coach needs camera access to analyze your exercise form.</string>
 </dict>
 </plist>

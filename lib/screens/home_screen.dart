@@ -145,13 +145,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                         width: 3,
                                       ), // Thicker border
                                     ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      'START WORKOUT',
-                                      style: AppTheme.labelButton.copyWith(
-                                        color: Colors.white,
-                                        fontSize:
-                                            28, // Matches screenshot size better
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16.0,
+                                      ),
+                                      child: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          'START WORKOUT',
+                                          style: AppTheme.labelButton.copyWith(
+                                            color: Colors.white,
+                                            fontSize:
+                                                28, // Matches screenshot size better
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),

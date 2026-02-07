@@ -12,6 +12,7 @@ class CameraSetupScreen extends StatefulWidget {
 class _CameraSetupScreenState extends State<CameraSetupScreen> {
   CameraController? _controller;
   bool _isCameraInitialized = false;
+  bool _isError = false; // Track initialization errors
   String _selectedView = 'front'; // 'front' or 'side'
 
   // Interaction states for buttons
@@ -19,29 +20,71 @@ class _CameraSetupScreenState extends State<CameraSetupScreen> {
   bool _isSideBtnPressed = false;
   bool _isStartBtnPressed = false;
 
+  List<CameraDescription> _cameras = [];
+  int _selectedCameraIndex = 0;
+
   @override
   void initState() {
     super.initState();
     _initializeCamera();
   }
 
-  Future<void> _initializeCamera() async {
-    // Lazy-load available cameras
-    List<CameraDescription> cameras = [];
+  Future<void> _initializeCamera({int retryCount = 0}) async {
+    const maxRetries = 3;
+    const retryDelayMs = 500;
+
+    setState(() {
+      _isError = false;
+      _isCameraInitialized = false;
+    });
+
+    // Add a small delay on retry to allow camera resources to be released
+    if (retryCount > 0) {
+      await Future.delayed(Duration(milliseconds: retryDelayMs * retryCount));
+    }
+
     try {
-      cameras = await availableCameras();
+      _cameras = await availableCameras();
     } on CameraException catch (e) {
       debugPrint('Camera error: $e');
+      if (retryCount < maxRetries) {
+        debugPrint(
+          'Retrying camera initialization (${retryCount + 1}/$maxRetries)...',
+        );
+        return _initializeCamera(retryCount: retryCount + 1);
+      }
+      _handleError();
       return;
     }
 
-    if (cameras.isEmpty) return;
+    if (_cameras.isEmpty) {
+      _handleError();
+      return;
+    }
 
-    // Use the first available back camera
-    final camera = cameras.firstWhere(
-      (description) => description.lensDirection == CameraLensDirection.back,
-      orElse: () => cameras.first,
+    // Default to the first available front camera
+    int frontCameraIndex = _cameras.indexWhere(
+      (description) => description.lensDirection == CameraLensDirection.front,
     );
+
+    _selectedCameraIndex = frontCameraIndex != -1 ? frontCameraIndex : 0;
+
+    final success = await _startCamera(_cameras[_selectedCameraIndex]);
+
+    // Retry if camera failed to start
+    if (!success && retryCount < maxRetries) {
+      debugPrint(
+        'Retrying camera initialization (${retryCount + 1}/$maxRetries)...',
+      );
+      return _initializeCamera(retryCount: retryCount + 1);
+    }
+  }
+
+  Future<bool> _startCamera(CameraDescription camera) async {
+    if (_controller != null) {
+      await _controller!.dispose();
+      _controller = null;
+    }
 
     _controller = CameraController(
       camera,
@@ -50,14 +93,53 @@ class _CameraSetupScreenState extends State<CameraSetupScreen> {
     );
 
     try {
-      await _controller!.initialize();
-      if (!mounted) return;
+      // Add timeout to prevent indefinite hang
+      await _controller!.initialize().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('Camera initialization timed out');
+        },
+      );
+      if (!mounted) return false;
       setState(() {
         _isCameraInitialized = true;
+        _isError = false;
       });
+      return true;
     } on CameraException catch (e) {
       debugPrint('Camera error: $e');
+      _handleError();
+      return false;
+    } catch (e) {
+      debugPrint('Generic camera error: $e');
+      _handleError();
+      return false;
     }
+  }
+
+  void _handleError() {
+    if (!mounted) return;
+    setState(() {
+      _isError = true;
+      _isCameraInitialized = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Failed to access camera. Please try again.'),
+      ),
+    );
+  }
+
+  Future<void> _toggleCamera() async {
+    if (_cameras.length < 2) return;
+
+    setState(() {
+      _isCameraInitialized = false;
+      _isError = false;
+      _selectedCameraIndex = (_selectedCameraIndex + 1) % _cameras.length;
+    });
+
+    await _startCamera(_cameras[_selectedCameraIndex]);
   }
 
   @override
@@ -68,6 +150,38 @@ class _CameraSetupScreenState extends State<CameraSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isError) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: AppTheme.accentRed,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Camera Error',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _initializeCamera,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryBlack,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('RETRY CAMERA'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (!_isCameraInitialized || _controller == null) {
       return const Scaffold(
         backgroundColor: Colors.white,
@@ -108,13 +222,45 @@ class _CameraSetupScreenState extends State<CameraSetupScreen> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        CameraPreview(_controller!),
+                        // Camera Preview Layer
+                        ClipRect(
+                          child: OverflowBox(
+                            alignment: Alignment.center,
+                            child: FittedBox(
+                              fit: BoxFit.cover,
+                              child: SizedBox(
+                                width: _controller!.value.previewSize!.height,
+                                height: _controller!.value.previewSize!.width,
+                                child: CameraPreview(_controller!),
+                              ),
+                            ),
+                          ),
+                        ),
+
                         // Overlay Grid
                         CustomPaint(painter: GridPainter()),
 
+                        // Camera Toggle Button
+                        if (_cameras.length > 1)
+                          Positioned(
+                            top: 16,
+                            right: 16,
+                            child: Material(
+                              color: Colors.black.withOpacity(0.5),
+                              shape: const CircleBorder(),
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.flip_camera_ios,
+                                  color: Colors.white,
+                                ),
+                                onPressed: _toggleCamera,
+                              ),
+                            ),
+                          ),
+
                         // "Align Body" pill
                         Positioned(
-                          top: 24,
+                          bottom: 24, // Moved to bottom to avoid conflict
                           left: 0,
                           right: 0,
                           child: Center(
@@ -197,13 +343,24 @@ class _CameraSetupScreenState extends State<CameraSetupScreen> {
                         isLarge: true,
                         isSelected: true, // Always "active" visual style
                         isPressed: _isStartBtnPressed,
-                        onTap: () {
-                          Navigator.pushNamed(
+                        onTap: () async {
+                          // Store camera description before disposing
+                          final cameraDescription = _controller!.description;
+                          final view = _selectedView;
+
+                          // CRITICAL: Dispose camera before navigation to release resources
+                          // This allows RecordingScreen to initialize the camera without conflicts
+                          await _controller?.dispose();
+                          _controller = null;
+
+                          if (!mounted) return;
+
+                          Navigator.pushReplacementNamed(
                             context,
                             '/recording',
                             arguments: {
-                              'view': _selectedView,
-                              'camera': _controller!.description,
+                              'view': view,
+                              'camera': cameraDescription,
                             },
                           );
                         },
