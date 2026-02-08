@@ -1,42 +1,98 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:http/http.dart' as http;
+
 import '../models/session_models.dart';
 
+// ---------------------------------------------------------------------------
+// Base URL Configuration
+// ---------------------------------------------------------------------------
+// For Android EMULATOR   → 'http://10.0.2.2:8000'
+// For PHYSICAL DEVICE    → your computer's local IP,
+//                           e.g. 'http://192.168.1.X:8000'
+//   (run `ipconfig` on Windows to find your IPv4 address)
+// For iOS SIMULATOR      → 'http://localhost:8000'
+// ---------------------------------------------------------------------------
+const String _baseUrl = 'http://10.0.2.2:8000';
+
+/// Set to `true` to bypass the real backend and return mock data.
+/// Useful for UI development when the backend is not running.
+const bool _useMock = true;
+
+/// Timeout duration for the analyze-session HTTP request.
+const Duration _requestTimeout = Duration(seconds: 120);
+
 class ApiService {
-  // Use 10.0.2.2 for Android emulator to access localhost of the host machine
-  // If running on a physical device, use your machine's local IP (e.g., 192.168.1.x)
-  static const String _baseUrl = 'http://10.0.2.2:8000';
+  final http.Client _client = http.Client();
 
   Future<SessionResponse> analyzeSession(SessionRequest request) async {
-    try {
-      // Artifical delay for UX (since we might be mocking or it's too fast)
+    // ── Mock mode for offline UI development ──────────────────────────────
+    if (_useMock) {
       await Future.delayed(const Duration(seconds: 2));
+      return _getMockResponse();
+    }
 
-      // Uncomment to use real backend
-      /*
-      final response = await http.post(
-        Uri.parse('$_baseUrl/api/session/analyze'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(request.toJson()),
+    // ── Real backend call ─────────────────────────────────────────────────
+    try {
+      final jsonBody = jsonEncode(request.toJson());
+      final payloadKB = (jsonBody.length / 1024).toStringAsFixed(1);
+      // ignore: avoid_print
+      print(
+        '[ApiService] Sending ${request.poseSequence.length} frames '
+        '($payloadKB KB) to $_baseUrl/api/session/analyze',
       );
 
-      if (response.statusCode == 200) {
-        return SessionResponse.fromJson(jsonDecode(response.body));
-      } else {
-        throw Exception('Failed to analyze session: ${response.statusCode}');
-      }
-      */
+      final response = await _client
+          .post(
+            Uri.parse('$_baseUrl/api/session/analyze'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonBody,
+          )
+          .timeout(_requestTimeout);
 
-      // -- MOCK RESPONSE FOR DEVELOPMENT (Frontend only) --
-      return _getMockResponse();
-    } catch (e) {
-      // Fallback for demo purposes if backend is unreachable
-      print('API Error (using mock): $e');
-      return _getMockResponse();
-      // throw Exception('Network error: $e'); // In real app, rethrow
+      if (response.statusCode == 200) {
+        return SessionResponse.fromJson(
+          jsonDecode(response.body) as Map<String, dynamic>,
+        );
+      }
+
+      // ── Non-200: try to parse backend error response ──
+      try {
+        final errorJson =
+            jsonDecode(response.body) as Map<String, dynamic>;
+        final err = ErrorResponse.fromJson(errorJson);
+        throw ApiException(
+          err.message,
+          errorCode: err.errorCode,
+          statusCode: response.statusCode,
+        );
+      } catch (e) {
+        if (e is ApiException) rethrow;
+        throw ApiException(
+          'Server error (${response.statusCode}). Please try again.',
+          statusCode: response.statusCode,
+        );
+      }
+    } on ApiException {
+      rethrow;
+    } on TimeoutException {
+      throw ApiException(
+        'Analysis timed out. Your session may be too long, '
+        'or the server is busy. Please try again.',
+      );
+    } on SocketException {
+      throw ApiException(
+        'Could not reach the server. Make sure the backend is running '
+        'and your device is on the same network.',
+      );
+    } on Exception catch (e) {
+      throw ApiException('Unexpected error: $e');
     }
   }
 
+  /// Mock response for offline UI development.
   SessionResponse _getMockResponse() {
     return SessionResponse(
       exercise: 'Squat',
@@ -55,5 +111,10 @@ class ApiService {
         'Good knee stability throughout the movement.',
       ],
     );
+  }
+
+  /// Clean up the HTTP client when no longer needed.
+  void dispose() {
+    _client.close();
   }
 }

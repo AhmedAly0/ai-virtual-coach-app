@@ -138,7 +138,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: Container(
                                     decoration: BoxDecoration(
                                       color: _isHovering
-                                          ? AppTheme.accentRed.withOpacity(0.9)
+                                          ? AppTheme.accentRed.withValues(
+                                              alpha: 0.9,
+                                            )
                                           : AppTheme.accentRed,
                                       border: Border.all(
                                         color: Colors.black,

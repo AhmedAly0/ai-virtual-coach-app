@@ -150,7 +150,7 @@ class ResultsScreen extends StatelessWidget {
                           : (constraints.maxWidth - 12) / 2;
                       return SizedBox(
                         width: width,
-                        child: _buildAspectCard(key, response.scores[key]!),
+                        child: _buildAspectCard(key, response.scores[key]! * 10),
                       );
                     }).toList(),
                   );

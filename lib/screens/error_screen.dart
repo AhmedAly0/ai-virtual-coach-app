@@ -6,6 +6,8 @@ class ErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final errorMessage = ModalRoute.of(context)?.settings.arguments as String?;
+
     return Scaffold(
       backgroundColor: AppTheme.primaryBlack,
       body: SafeArea(
@@ -19,7 +21,7 @@ class ErrorScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppTheme.accentRed.withOpacity(0.1),
+                  color: AppTheme.accentRed.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -42,7 +44,8 @@ class ErrorScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Unable to analyze exercise.\nPossible reasons: Camera obstructed, no internet, or backend error.',
+                errorMessage ??
+                    'Unable to analyze exercise.\nPossible reasons: Camera obstructed, no internet, or backend error.',
                 style: AppTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),

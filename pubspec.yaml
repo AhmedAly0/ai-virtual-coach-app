@@ -39,6 +39,7 @@ dependencies:
   flutter_riverpod: ^2.6.1
   google_fonts: ^6.3.3
   json_annotation: ^4.9.0
+  flutter_pose_detection: ^0.4.1
 
 dev_dependencies:
   flutter_test:

@@ -2,7 +2,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'session_models.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createFactory: false)
 class SessionRequest {
   @JsonKey(name: 'exercise_view')
   final String exerciseView;
@@ -21,7 +21,7 @@ class SessionRequest {
   Map<String, dynamic> toJson() => _$SessionRequestToJson(this);
 }
 
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class SessionResponse {
   final String exercise;
 
@@ -45,4 +45,33 @@ class SessionResponse {
 
   factory SessionResponse.fromJson(Map<String, dynamic> json) =>
       _$SessionResponseFromJson(json);
+}
+
+@JsonSerializable(createToJson: false)
+class ErrorResponse {
+  @JsonKey(name: 'error_code')
+  final String errorCode;
+
+  final String message;
+
+  ErrorResponse({
+    required this.errorCode,
+    required this.message,
+  });
+
+  factory ErrorResponse.fromJson(Map<String, dynamic> json) =>
+      _$ErrorResponseFromJson(json);
+}
+
+/// Custom exception for API errors carrying the backend's error message.
+class ApiException implements Exception {
+  final String message;
+  final String? errorCode;
+  final int? statusCode;
+
+  ApiException(this.message, {this.errorCode, this.statusCode});
+
+  @override
+  String toString() =>
+      'ApiException: $message (code: $errorCode, status: $statusCode)';
 }

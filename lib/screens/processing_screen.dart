@@ -16,7 +16,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
   final ApiService _apiService = ApiService();
   String _statusText = "ANALYZING YOUR FORM";
   String _subtitleText = "AI is evaluating your exercise technique...";
-  String _motivationalText = '"Stay focused. Results incoming."';
+  final String _motivationalText = '"Stay focused. Results incoming."';
   double _progress = 0.0;
   bool _analysisStarted = false;
 
@@ -35,8 +35,10 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
 
     if (args == null) {
       // Should not happen, but handle it
-      Future.delayed(Duration.zero, () {
-        Navigator.pushReplacementNamed(context, '/error');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/error');
+        }
       });
       return;
     }
@@ -65,9 +67,20 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
       if (!mounted) return;
 
       Navigator.pushReplacementNamed(context, '/results', arguments: response);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(
+        context,
+        '/error',
+        arguments: e.message,
+      );
     } catch (e) {
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/error');
+      Navigator.pushReplacementNamed(
+        context,
+        '/error',
+        arguments: 'An unexpected error occurred. Please try again.',
+      );
     }
   }
 

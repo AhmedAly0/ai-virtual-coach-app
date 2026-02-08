@@ -246,7 +246,7 @@ class _CameraSetupScreenState extends State<CameraSetupScreen> {
                             top: 16,
                             right: 16,
                             child: Material(
-                              color: Colors.black.withOpacity(0.5),
+                              color: Colors.black.withValues(alpha: 0.5),
                               shape: const CircleBorder(),
                               child: IconButton(
                                 icon: const Icon(
@@ -347,6 +347,7 @@ class _CameraSetupScreenState extends State<CameraSetupScreen> {
                           // Store camera description before disposing
                           final cameraDescription = _controller!.description;
                           final view = _selectedView;
+                          final navigator = Navigator.of(context);
 
                           // CRITICAL: Dispose camera before navigation to release resources
                           // This allows RecordingScreen to initialize the camera without conflicts
@@ -355,8 +356,8 @@ class _CameraSetupScreenState extends State<CameraSetupScreen> {
 
                           if (!mounted) return;
 
-                          Navigator.pushReplacementNamed(
-                            context,
+                          // ignore: use_build_context_synchronously
+                          navigator.pushReplacementNamed(
                             '/recording',
                             arguments: {
                               'view': view,
@@ -474,7 +475,7 @@ class GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.5)
+      ..color = Colors.white.withValues(alpha: 0.5)
       ..strokeWidth = 2;
 
     // Draw vertical lines
