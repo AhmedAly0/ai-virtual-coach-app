@@ -15,11 +15,11 @@ import '../models/session_models.dart';
 //   (run `ipconfig` on Windows to find your IPv4 address)
 // For iOS SIMULATOR      → 'http://localhost:8000'
 // ---------------------------------------------------------------------------
-const String _baseUrl = 'http://10.0.2.2:8000';
+const String _baseUrl = 'http://192.168.1.198:8000';
 
 /// Set to `true` to bypass the real backend and return mock data.
 /// Useful for UI development when the backend is not running.
-const bool _useMock = true;
+const bool _useMock = false;
 
 /// Timeout duration for the analyze-session HTTP request.
 const Duration _requestTimeout = Duration(seconds: 120);

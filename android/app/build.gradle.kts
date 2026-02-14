@@ -35,6 +35,11 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+
+            // Disable R8 code shrinking — it strips native JNI bindings
+            // used by flutter_pose_detection, causing release-mode crashes.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
